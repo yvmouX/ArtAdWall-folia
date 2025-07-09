@@ -9,8 +9,5 @@
         <module name="ArtAdWall" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="ArtAdWall" target="1.8" />
-    </bytecodeTargetLevel>
   </component>
 </project>
