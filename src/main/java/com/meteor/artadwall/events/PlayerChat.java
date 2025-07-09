@@ -63,10 +63,17 @@ public class PlayerChat implements Listener {
             }
             switch (playerData.getEnterType()) {
                 case NEWAD:
-                    Bukkit.getScheduler().runTask(plugin,()->{
-                        player.performCommand("artad create "+chatEvent.getMessage());
-                        playerData.setEnterType(EnterType.NO);
-                    });
+                    if (ArtAdWall.getFoliaLib().isFolia()) {
+                        ArtAdWall.getFoliaLib().getScheduler().runAtEntity(player, wrappedTask -> {
+                            player.performCommand("artad create "+chatEvent.getMessage());
+                            playerData.setEnterType(EnterType.NO);
+                        });
+                    } else {
+                        Bukkit.getScheduler().runTask(plugin,()->{
+                            player.performCommand("artad create "+chatEvent.getMessage());
+                            playerData.setEnterType(EnterType.NO);
+                        });
+                    }
                     return;
                 case RNAME:
                     String oldname = playerData.getRad().getName();
@@ -78,22 +85,38 @@ public class PlayerChat implements Listener {
                     playerData.getRad().setNameSQL(oldname,newname,playerData);
                     player.sendMessage(mes.getMessage("message.rname-sur").replace("@ad_name@", newname));
                     playerData.setEnterType(EnterType.NO);
-                    Bukkit.getScheduler().runTask(plugin,()->{
-                        player.closeInventory();
-                        AdInv.openEdit(player);
-                    });
+                    if (ArtAdWall.getFoliaLib().isFolia()) {
+                        ArtAdWall.getFoliaLib().getScheduler().runNextTick(wrappedTask -> {
+                            player.closeInventory();
+                            AdInv.openEdit(player);
+                        });
+                    } else {
+                        Bukkit.getScheduler().runTask(plugin,()->{
+                            player.closeInventory();
+                            AdInv.openEdit(player);
+                        });
+                    }
                     return;
                 case RLORE:
                     String message = chatEvent.getMessage();
                     List<String> lore = new ArrayList<>();
                     lore.addAll(playerData.getRad().getLore());
                     if (message.equalsIgnoreCase("save")) {
-                        Bukkit.getScheduler().runTask(plugin,()->{
-                            playerData.getRad().setLoreSql(playerData.getRad().getLore());
-                            AdInv.openEdit(player);
-                            playerData.setEnterType(EnterType.NO);
-                            mes.sendMessage("message.save-lore", player);
-                        });
+                        if (ArtAdWall.getFoliaLib().isFolia()) {
+                            ArtAdWall.getFoliaLib().getScheduler().runNextTick(wrappedTask -> {
+                                playerData.getRad().setLoreSql(playerData.getRad().getLore());
+                                AdInv.openEdit(player);
+                                playerData.setEnterType(EnterType.NO);
+                                mes.sendMessage("message.save-lore", player);
+                            });
+                        } else {
+                            Bukkit.getScheduler().runTask(plugin,()->{
+                                playerData.getRad().setLoreSql(playerData.getRad().getLore());
+                                AdInv.openEdit(player);
+                                playerData.setEnterType(EnterType.NO);
+                                mes.sendMessage("message.save-lore", player);
+                            });
+                        }
                         return;
                     } else if (message.startsWith("add ")) {
                         player.sendMessage(mes.getMessage("message.add-lore"));

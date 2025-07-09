@@ -4,6 +4,7 @@ main: com.meteor.artadwall.ArtAdWall
 api-version: 1.13
 authors: [meteor]
 depend: [Vault]
+folia-supported: true
 commands:
   artad:
   artadm:

@@ -89,7 +89,7 @@ public class AdInv {
         player.openInventory(inventory);
         String id = ArtAdWall.plugin.getConfig().getString("item.ID");
         short data = (short) ArtAdWall.plugin.getConfig().getInt("item.data");
-        Bukkit.getScheduler().runTaskAsynchronously(ArtAdWall.plugin,()->{
+        Runnable runnable = () -> {
             YamlConfiguration yml = (YamlConfiguration) ArtAdWall.plugin.getConfig();
             ads.forEach((item)->{
                 ItemStack itemStack = new ItemStack(Material.valueOf(id),1,data);
@@ -111,7 +111,13 @@ public class AdInv {
                 itemStack.setItemMeta(itemMeta);
                 inventory.addItem(itemStack);
             });
-        });
+        };
+        if (ArtAdWall.getFoliaLib().isFolia()) {
+            ArtAdWall.getFoliaLib().getScheduler().runAsync(wrappedTask -> runnable.run());
+        } else {
+            Bukkit.getScheduler().runTaskAsynchronously(ArtAdWall.plugin,runnable);
+        }
+
     }
     static ItemStack getAdInfo(AdData adData){
         List<String> lore = new ArrayList<>();
@@ -196,6 +202,10 @@ public class AdInv {
     public static void openAdList(Player player){
         ListHolder listHolder = new ListHolder();
         PlayerData playerData = ArtAdWall.plugin.getPlayerData().get(player.getName());
+        if(playerData == null) {
+            playerData = new com.meteor.artadwall.data.PlayerData(player.getName(), new ArrayList<>(), 0);
+            ArtAdWall.plugin.getPlayerData().put(player.getName(), playerData);
+        }
         if(playerData.getAd()!=null){
             listHolder.setAds(getEditAds(playerData.getAd()));
         }

@@ -12,10 +12,10 @@ import com.meteor.artadwall.events.TypeSelClick;
 import com.meteor.artadwall.inv.InvType;
 import com.meteor.artadwall.sqlite.Sqllite;
 import com.meteor.artadwall.tools.MessageManager;
+import com.tcoded.folialib.FoliaLib;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public final class ArtAdWall extends JavaPlugin {
+    private static FoliaLib foliaLib;
     private Sqllite sqllite;
     private MessageManager lang;
     private List<AdData> ads = new ArrayList<>();
@@ -37,8 +38,12 @@ public final class ArtAdWall extends JavaPlugin {
     private HashMap<String,PlayerData> playerData = new HashMap<>();
     public static HashMap<InvType,MessageManager> gui = new HashMap<>();
     public static ArtAdWall plugin = null;
+
+    public static FoliaLib getFoliaLib() { return foliaLib; }
+
     @Override
     public void onEnable() {
+        foliaLib = new FoliaLib(this);
         saveDefaultConfig();
         reloadFile();
         getServer().getLogger().info("---------------------------------");
@@ -53,10 +58,25 @@ public final class ArtAdWall extends JavaPlugin {
                 registerEvents();
                 loadAds();
         }
-        if(Bukkit.getPluginManager().isPluginEnabled("Vault")){
+        // 适配VaultUnlockedAPI（vault2）和普通Vault
+        boolean vault2Found = false;
+        try {
+            Class<?> economyClass = Class.forName("net.milkbowl.vault2.economy.Economy");
+            RegisteredServiceProvider<?> ecoapi = getServer().getServicesManager().getRegistration(economyClass);
+            if (ecoapi != null) {
+                economy = (Economy) ecoapi.getProvider();
+                getServer().getLogger().info("[ArtAdWall] 已关联到VaultUnlockedAPI (vault2) 插件");
+                vault2Found = true;
+            }
+        } catch (ClassNotFoundException ignored) {}
+        if (!vault2Found && Bukkit.getPluginManager().isPluginEnabled("Vault")){
             RegisteredServiceProvider<Economy> ecoapi = getServer().getServicesManager().getRegistration(Economy.class);
-            economy = ecoapi.getProvider();
-            getServer().getLogger().info("[ArtAdWall] 已关联到Vault插件");
+            if (ecoapi != null) {
+                economy = ecoapi.getProvider();
+                getServer().getLogger().info("[ArtAdWall] 已关联到Vault插件");
+            } else {
+                getServer().getLogger().warning("[ArtAdWall] 未找到经济插件，Vault已安装但未注册经济服务。");
+            }
         }
     }
     private void registerCommands(){
